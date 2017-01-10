@@ -12,6 +12,8 @@ from fast_rcnn.config import cfg
 from fast_rcnn.bbox_transform import bbox_transform
 from utils.cython_bbox import bbox_overlaps
 import PIL
+import scipy.io as sio
+import pdb
 
 def prepare_roidb(imdb):
     """Enrich the imdb's roidb by adding some derived quantities that
@@ -20,13 +22,17 @@ def prepare_roidb(imdb):
     each ground-truth box. The class with maximum overlap is also
     recorded.
     """
+    '''
     sizes = [PIL.Image.open(imdb.image_path_at(i)).size
+             for i in xrange(imdb.num_images)]
+    '''
+    sizes = [sio.loadmat(imdb.image_path_at(i))['grid'].shape
              for i in xrange(imdb.num_images)]
     roidb = imdb.roidb
     for i in xrange(len(imdb.image_index)):
         roidb[i]['image'] = imdb.image_path_at(i)
-        roidb[i]['width'] = sizes[i][0]
-        roidb[i]['height'] = sizes[i][1]
+        roidb[i]['width'] = sizes[i][1] #gabriel change 0 <--> 1
+        roidb[i]['height'] = sizes[i][0]# due to the different order produced by Image.open & loadmat
         # need gt_overlaps as a dense array for argmax
         gt_overlaps = roidb[i]['gt_overlaps'].toarray()
         # max overlap with gt over classes (columns)

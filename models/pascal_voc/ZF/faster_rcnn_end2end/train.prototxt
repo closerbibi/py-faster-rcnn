@@ -8,17 +8,18 @@ layer {
   python_param {
     module: 'roi_data_layer.layer'
     layer: 'RoIDataLayer'
-    param_str: "'num_classes': 21"
+    param_str: "'num_classes': 6"
   }
 }
+
 
 #========= conv1-conv5 ============
 
 layer {
-	name: "conv1"
+	name: "my_conv1"
 	type: "Convolution"
 	bottom: "data"
-	top: "conv1"
+	top: "my_conv1"
 	param { lr_mult: 1.0 }
 	param { lr_mult: 2.0 }
 	convolution_param {
@@ -26,18 +27,20 @@ layer {
 		kernel_size: 7
 		pad: 3
 		stride: 2
+		weight_filler { type: "gaussian" std: 0.01 }
+		bias_filler { type: "constant" value: 0 }
 	}
 }
 layer {
 	name: "relu1"
 	type: "ReLU"
-	bottom: "conv1"
-	top: "conv1"
+	bottom: "my_conv1"
+	top: "my_conv1"
 }
 layer {
 	name: "norm1"
 	type: "LRN"
-	bottom: "conv1"
+	bottom: "my_conv1"
 	top: "norm1"
 	lrn_param {
 		local_size: 3
@@ -361,7 +364,7 @@ layer {
   python_param {
     module: 'rpn.proposal_target_layer'
     layer: 'ProposalTargetLayer'
-    param_str: "'num_classes': 21"
+    param_str: "'num_classes': 6"
   }
 }
 
@@ -434,14 +437,14 @@ layer {
   }
 }
 layer {
-  name: "cls_score"
+  name: "my_cls_score"
   type: "InnerProduct"
   bottom: "fc7"
-  top: "cls_score"
+  top: "my_cls_score"
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   inner_product_param {
-    num_output: 21
+    num_output: 6
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -453,14 +456,14 @@ layer {
   }
 }
 layer {
-  name: "bbox_pred"
+  name: "my_bbox_pred"
   type: "InnerProduct"
   bottom: "fc7"
-  top: "bbox_pred"
+  top: "my_bbox_pred"
   param { lr_mult: 1.0 }
   param { lr_mult: 2.0 }
   inner_product_param {
-    num_output: 84
+    num_output: 24 # 4*6
     weight_filler {
       type: "gaussian"
       std: 0.001
@@ -474,7 +477,7 @@ layer {
 layer {
   name: "loss_cls"
   type: "SoftmaxWithLoss"
-  bottom: "cls_score"
+  bottom: "my_cls_score"
   bottom: "labels"
   propagate_down: 1
   propagate_down: 0
@@ -488,7 +491,7 @@ layer {
 layer {
   name: "loss_bbox"
   type: "SmoothL1Loss"
-  bottom: "bbox_pred"
+  bottom: "my_bbox_pred"
   bottom: "bbox_targets"
   bottom: 'bbox_inside_weights'
   bottom: 'bbox_outside_weights'

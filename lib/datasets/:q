@@ -110,8 +110,9 @@ class imdb(object):
             boxes = self.roidb[i]['boxes'].copy()
             oldx1 = boxes[:, 0].copy() # 0: xmin
             oldx2 = boxes[:, 2].copy() # 2: xmax
+            pdb.set_trace()
             boxes[:, 0] = widths[i] - oldx2 - 1 # width - max: suppose to be small
-            boxes[:, 2] = widths[i] - oldx1 - 1 # width - min: supposed to be big
+            boxes[:, 2] = widths[i] - oldx1 - 1 # width - min: vise versa
             assert (boxes[:, 2] >= boxes[:, 0]).all()
             entry = {'boxes' : boxes,
                      'gt_overlaps' : self.roidb[i]['gt_overlaps'],

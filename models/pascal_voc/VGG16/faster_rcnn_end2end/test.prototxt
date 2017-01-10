@@ -15,10 +15,10 @@ input_shape {
 }
 
 layer {
-  name: "conv1_1"
+  name: "my_conv1_1"
   type: "Convolution"
   bottom: "data"
-  top: "conv1_1"
+  top: "my_conv1_1"
   param {
     lr_mult: 0
     decay_mult: 0
@@ -28,7 +28,7 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 64
+    num_output: 96
     pad: 1
     kernel_size: 3
   }
@@ -36,13 +36,13 @@ layer {
 layer {
   name: "relu1_1"
   type: "ReLU"
-  bottom: "conv1_1"
-  top: "conv1_1"
+  bottom: "my_conv1_1"
+  top: "my_conv1_1"
 }
 layer {
   name: "conv1_2"
   type: "Convolution"
-  bottom: "conv1_1"
+  bottom: "my_conv1_1"
   top: "conv1_2"
   param {
     lr_mult: 0
@@ -551,10 +551,10 @@ layer {
   }
 }
 layer {
-  name: "cls_score"
+  name: "my_cls_score"
   type: "InnerProduct"
   bottom: "fc7"
-  top: "cls_score"
+  top: "my_cls_score"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -564,7 +564,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 21
+    num_output: 6
     weight_filler {
       type: "gaussian"
       std: 0.01
@@ -576,10 +576,10 @@ layer {
   }
 }
 layer {
-  name: "bbox_pred"
+  name: "my_bbox_pred"
   type: "InnerProduct"
   bottom: "fc7"
-  top: "bbox_pred"
+  top: "my_bbox_pred"
   param {
     lr_mult: 1
     decay_mult: 1
@@ -589,7 +589,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 84
+    num_output: 24
     weight_filler {
       type: "gaussian"
       std: 0.001
@@ -603,6 +603,6 @@ layer {
 layer {
   name: "cls_prob"
   type: "Softmax"
-  bottom: "cls_score"
+  bottom: "my_cls_score"
   top: "cls_prob"
 }

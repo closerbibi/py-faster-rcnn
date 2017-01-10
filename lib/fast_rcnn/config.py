@@ -89,7 +89,7 @@ __C.TRAIN.BBOX_NORMALIZE_MEANS = (0.0, 0.0, 0.0, 0.0)
 __C.TRAIN.BBOX_NORMALIZE_STDS = (0.1, 0.1, 0.2, 0.2)
 
 # Train using these proposals
-__C.TRAIN.PROPOSAL_METHOD = 'selective_search'
+__C.TRAIN.PROPOSAL_METHOD = 'rpn'#'selective_search'
 
 # Make minibatches from images that have similar aspect ratios (i.e. both
 # tall and thin or both short and wide) in order to avoid wasting computation
@@ -97,7 +97,7 @@ __C.TRAIN.PROPOSAL_METHOD = 'selective_search'
 __C.TRAIN.ASPECT_GROUPING = True
 
 # Use RPN to detect objects
-__C.TRAIN.HAS_RPN = False
+__C.TRAIN.HAS_RPN = True#False
 # IOU >= thresh: positive example
 __C.TRAIN.RPN_POSITIVE_OVERLAP = 0.7
 # IOU < thresh: negative example
@@ -149,10 +149,10 @@ __C.TEST.SVM = False
 __C.TEST.BBOX_REG = True
 
 # Propose boxes
-__C.TEST.HAS_RPN = False
+__C.TEST.HAS_RPN = True#False
 
 # Test using these proposals
-__C.TEST.PROPOSAL_METHOD = 'selective_search'
+__C.TEST.PROPOSAL_METHOD = 'rpn'#'selective_search'
 
 ## NMS threshold used on RPN proposals
 __C.TEST.RPN_NMS_THRESH = 0.7
@@ -178,7 +178,13 @@ __C.DEDUP_BOXES = 1./16.
 # Pixel mean values (BGR order) as a (1, 1, 3) array
 # We use the same pixel mean for all networks even though it's not exactly what
 # they were trained with
-__C.PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
+#__C.PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
+
+#__C.PIXEL_MEANS = np.array([[[-1.1253, -0.0758, 0.0233, -0.6230]]])
+#__C.PIXEL_MEANS = np.array([[[0.6486, -0.0248, -0.0122, 0.1946]]])
+#__C.PIXEL_MEANS = np.array([[[-0.0114, 0.0060, 0.0032, 0.0106]]])
+#__C.PIXEL_MEANS = np.array([[[0.0, 2.7255272469485358e-05, -0.0049675340926661699, -0.0042286105568016975]]])
+__C.PIXEL_MEANS = np.array([[[0.1498, -0.0063, -0.0031, 0.0382]]])
 
 # For reproducibility
 __C.RNG_SEED = 3

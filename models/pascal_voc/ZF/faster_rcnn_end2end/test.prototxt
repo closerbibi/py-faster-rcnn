@@ -3,7 +3,7 @@ name: "ZF"
 input: "data"
 input_shape {
   dim: 1
-  dim: 3
+  dim: 4
   dim: 224
   dim: 224
 }
@@ -17,10 +17,10 @@ input_shape {
 #========= conv1-conv5 ============
 
 layer {
-	name: "conv1"
+	name: "my_conv1"
 	type: "Convolution"
 	bottom: "data"
-	top: "conv1"
+	top: "my_conv1"
 	convolution_param {
 		num_output: 96
 		kernel_size: 7
@@ -31,13 +31,13 @@ layer {
 layer {
 	name: "relu1"
 	type: "ReLU"
-	bottom: "conv1"
-	top: "conv1"
+	bottom: "my_conv1"
+	top: "my_conv1"
 }
 layer {
 	name: "norm1"
 	type: "LRN"
-	bottom: "conv1"
+	bottom: "my_conv1"
 	top: "norm1"
 	lrn_param {
 		local_size: 3
@@ -344,27 +344,27 @@ layer {
   }
 }
 layer {
-  name: "cls_score"
+  name: "my_cls_score"
   type: "InnerProduct"
   bottom: "fc7"
-  top: "cls_score"
+  top: "my_cls_score"
   inner_product_param {
-    num_output: 21
+    num_output: 6
   }
 }
 layer {
-  name: "bbox_pred"
+  name: "my_bbox_pred"
   type: "InnerProduct"
   bottom: "fc7"
-  top: "bbox_pred"
+  top: "my_bbox_pred"
   inner_product_param {
-    num_output: 84
+    num_output: 24
   }
 }
 layer {
   name: "cls_prob"
   type: "Softmax"
-  bottom: "cls_score"
+  bottom: "my_cls_score"
   top: "cls_prob"
   loss_param {
     ignore_label: -1

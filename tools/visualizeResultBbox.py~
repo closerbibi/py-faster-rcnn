@@ -1,0 +1,6 @@
+import pdb
+
+resultpath = '/home/closerbibi/bin/faster-rcnn/results/test/comp4-11062_det_test_bed.txt'
+with open(resultpath) as f:
+    for line in f:
+

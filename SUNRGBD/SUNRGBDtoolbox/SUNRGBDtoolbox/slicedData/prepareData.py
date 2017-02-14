@@ -14,9 +14,37 @@ import time
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import math
+import pylab
+import matplotlib.patches as patches
+
+def plot_2d_pc_bbox(grid, xmin, xmax, ymin, ymax):
+    fig = pylab.figure()
+    ax = fig.add_subplot(111, aspect='equal')
+    xlen=  xmax - xmin
+    ylen=  ymax - ymin
+    '''
+    ax3.add_patch(
+        patches.Rectangle(
+            (xmin,ymin), xlen, ylen, fill=False, # remove background~
+            edgecolor='green'
+        )
+    )
+    '''
+    for i in xrange(len(xmin)):
+        ax.add_patch(patches.Rectangle( (xmin[i],ymin[i]), xlen[i], ylen[i], fill=False, edgecolor='green' ))
+        #ax.add_patch(patches.Rectangle( (ymin[i],xmin[i]), ylen[i], xlen[i], fill=False, edgecolor='green' ))
+    plt.imshow(grid[4,0,:])
+    plt.draw()
+    plt.title('layer:'+'' )
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    plt.show()
+    plt.show(block=False)
+    pdb.set_trace()
+
 
 def compute_mean():
-
+    print "Hello, I am empty"
 
 def plot_3d(layer, xmin, xmax, ymin, ymax, zmin, zmax, layers):
     fig = plt.figure()
@@ -26,13 +54,13 @@ def plot_3d(layer, xmin, xmax, ymin, ymax, zmin, zmax, layers):
         xs = layer[num][0][range(0,len(layer[num][0]),10)]
         ys = layer[num][1][range(0,len(layer[num][1]),10)]
         zs = layer[num][2][range(0,len(layer[num][2]),10)]
-        xb = np.concatenate((xmin[0],xmax[0]))
-        yb = np.concatenate((zmin[0],xmax[0]))
-        zb = np.concatenate((zmin[0],zmax[0]))
+        xb = np.concatenate((xmin,xmax))
+        yb = np.concatenate((zmin,xmax))
+        zb = np.concatenate((zmin,zmax))
         ax.scatter(xs, ys, zs, c=color[num], marker='o')
         #ax.scatter(xb, yb, zb, c='y', marker='^')
-        ax.scatter(xmin[0], ymin[0], zmin[0], c='y', marker='^')
-        ax.scatter(xmax[0], ymax[0], zmax[0], c='k', marker='^')
+        ax.scatter(xmin, ymin, zmin, c='y', marker='^')
+        ax.scatter(xmax, ymax, zmax, c='k', marker='^')
         #plt.setp(ax.scatter(0, 0, 0), color='yellow')
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')
@@ -56,7 +84,7 @@ def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, poolin
         cur_floor = floor + l_step*layer_num
 
         # trim layer without target class (chair only first)
-        if (cur_ceiling < zmin[0]).all() or (cur_floor > zmax[0]).all():
+        if (cur_ceiling < zmin).all() or (cur_floor > zmax).all():
             continue
         idx = np.where((pc[2,:] > cur_floor) * (pc[2,:] < cur_ceiling))
         layer[layer_num] = pc[:,idx[0]]
@@ -67,7 +95,6 @@ def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, poolin
     # making grid
     
 
-
     pcx_shift = pc[0]-np.min(pc[0])
     pcy_shift = pc[1]-np.min(pc[1])
     largex = np.floor(pcx_shift*100)
@@ -76,8 +103,8 @@ def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, poolin
     idxx = range(int(np.min(largepc[0])),int(np.max(largepc[0])+1),1)
     idxy = range(int(np.min(largepc[1])),int(np.max(largepc[1])+1),1)
     data_grid = np.meshgrid(idxx,idxy)
-    grid = np.zeros((len(layer),2,len(idxx),len(idxy)))
-    for ilayer in xrange(len(layer)):
+    grid = np.zeros((len(layer),2,len(idxy),len(idxx)))
+    for ilayer in xrange(len(layer)): #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
         layerpcx_shift = layer[ilayer][0]-np.min(pc[0])
         layerpcy_shift = layer[ilayer][1]-np.min(pc[1])
         layerlargex = np.floor(layerpcx_shift*100)
@@ -86,18 +113,22 @@ def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, poolin
         start = time.time()
         for ix in idxx:
             for iy in idxy:
-                # compute density
+                rviy = max(idxy) - iy
+                # compute density: channel 0
                 location = (large_layerpc[0]==ix)*(large_layerpc[1]==iy)
-                grid[ilayer][0][ix][iy] = np.sum((large_layerpc[0]==ix)*(large_layerpc[1]==iy))
-                # find max
-                if grid[ilayer][0][ix][iy] == 0:   # if empty, giving lowest value of current layer
-                    grid[ilayer][1][ix][iy] = np.min(large_layerpc[2])
+                grid[ilayer][0][rviy][ix] = np.sum((large_layerpc[0]==ix)*(large_layerpc[1]==iy))
+                # find max: channel 1
+                if grid[ilayer][0][rviy][ix] == 0:   # if empty, giving lowest value of current layer
+                    grid[ilayer][1][rviy][ix] = np.min(large_layerpc[2])
                 else:
-                    grid[ilayer][1][ix][iy] = np.max(large_layerpc[2][location])
-        print 'time:'+ str(time.time()-start)
+                    grid[ilayer][1][rviy][ix] = np.max(large_layerpc[2][location])
+        print 'time'+ str(time.time()-start)
     pdb.set_trace()
-
-
+    xmin = xmin - np.min(pc[0]); xmax = xmax - np.min(pc[0]); ymin = ymin - np.min(pc[1]); ymax = ymax - np.min(pc[1]);
+    xmin = np.floor(xmin*100); xmax = np.floor(xmax*100); ymin = np.floor(ymin*100); ymax = np.floor(ymax*100); #zmin = np.floor(zmin*100); zmax = np.floor(zmax*100);
+    ymin = max(idxy) - ymin; ymax = max(idxy) - ymax
+    plot_2d_pc_bbox(grid, xmin, xmax, ymin, ymax)
+    pdb.set_trace()
     
     return grid
 
@@ -118,7 +149,12 @@ for imagenum in xrange(data['depths'].shape[0]):#size(depths,3):
         continue
     #points3d = points3d'
     pc = box_pc['points3d']; clss=box_pc['clss']
-    ymin = box_pc['ymin']; ymax=box_pc['ymax']; xmin=box_pc['xmin']; xmax=box_pc['xmax']; zmin=box_pc['zmin']; zmax=box_pc['zmax']
+    # change bbox to y,x,z
+    ymin = box_pc['ymin'][0]; ymax=box_pc['ymax'][0]; xmin=box_pc['xmin'][0]; xmax=box_pc['xmax'][0]; zmin=box_pc['zmin'][0]; zmax=box_pc['zmax'][0];
+    #xmin = box_pc['ymin'][0]; xmax=box_pc['ymax'][0]; ymin=box_pc['xmin'][0]; ymax=box_pc['xmax'][0]; zmin=box_pc['zmin'][0]; zmax=box_pc['zmax'][0];
+    pc = np.swapaxes(pc, 0, 1)
+    # change pc to y,x,z
+    #pc = pc[[1,0,2],:]
     normals = sio.loadmat('./normalAndpc/normalAndpc%06d.mat'%(imagenum))['normals']
     pooling = 0
     #slicedto2D

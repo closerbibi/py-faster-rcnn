@@ -48,7 +48,6 @@ def func_star(a_b):
 '''
 def constructing_grid(max_idxy,ix,iy,grid,large_layerpc):
     #idxx = inparam[0]; idxy = inparam[1]; grid = inparam[2]; large_layerpc = inparam[3]
-    pdb.set_trace()
     #for ix in idxx:
     #    for iy in idxy:
     rviy = max_idxy - iy
@@ -62,23 +61,15 @@ def constructing_grid(max_idxy,ix,iy,grid,large_layerpc):
         grid[1][rviy][ix] = np.max(large_layerpc[2][location])
     return grid
 '''
-def plot_2d_pc_bbox(grid, xmin, xmax, ymin, ymax):
+def plot_2d_pc_bbox(grid, xmin, ymin, xmax, ymax):
     fig = pylab.figure()
     ax = fig.add_subplot(111, aspect='equal')
     xlen=  xmax - xmin
     ylen=  ymax - ymin
-    '''
-    ax3.add_patch(
-        patches.Rectangle(
-            (xmin,ymin), xlen, ylen, fill=False, # remove background~
-            edgecolor='green'
-        )
-    )
-    '''
     for i in xrange(len(xmin)):
         ax.add_patch(patches.Rectangle( (xmin[i],ymin[i]), xlen[i], ylen[i], fill=False, edgecolor='green' ))
         #ax.add_patch(patches.Rectangle( (ymin[i],xmin[i]), ylen[i], xlen[i], fill=False, edgecolor='green' ))
-    plt.imshow(grid[4,0,:])
+    plt.imshow(grid[0,:])
     plt.draw()
     plt.title('layer:'+'' )
     ax.set_xlabel('X Label')
@@ -108,7 +99,7 @@ def plot_3d(layer, xmin, xmax, ymin, ymax, zmin, zmax, layers):
     ax.set_zlabel('Z Label')
     plt.show()
 
-def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, pooling):
+def slicedto2D(pc, normals, imagenum, xmin, ymin, xmax, ymax, zmin, zmax, pooling):
     # find upright vector
     upright = np.array([1e-06,1e-06, 1])
     points_height = pc[2,:]
@@ -125,13 +116,14 @@ def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, poolin
         cur_floor = floor + l_step*layer_num
 
         # trim layer without target class (chair only first)
-        if (cur_ceiling < zmin).all() or (cur_floor > zmax).all():
+        # change to more accurate layer finding
+        if (cur_ceiling > zmax).all() or (cur_floor < zmin).all():
             continue
         idx = np.where((pc[2,:] > cur_floor) * (pc[2,:] < cur_ceiling))
         layer[layer_num] = pc[:,idx[0]]
 
     # show 3d data and bbox corner
-    #plot_3d(layer, xmin, xmax, ymin, ymax, zmin, zmax, layers)
+    #plot_3d(layer, xmin, ymin, xmax, ymax, zmin, zmax, layers)
     
     # making grid
     
@@ -153,8 +145,8 @@ def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, poolin
         grid = np.zeros((2,len(idxy),len(idxx)))
         # using parallel computing to boost up
         #grid = Parallel(n_jobs=num_cores)(delayed(constructing_grid)(idxx,idxy,grid,large_layerpc))
-        pool = Pool()
-        inparam = {}
+        #pool = Pool()
+        #inparam = {}
         #inparam['idxx'] = idxx; inparam['idxy'] = idxy; inparam['grid'] = grid; inparam['large_layerpc'] = large_layerpc;
         #inparam = [idxx,idxy,grid,large_layerpc]
         #grid = pool.map(constructing_grid, inparam)
@@ -162,6 +154,7 @@ def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, poolin
 
         # max_idxy,ix,iy,grid,large_layerpc
         max_idxy = max(idxy)
+        '''
         for ix in idxx:
             pool.map(func_star, itertools.izip(itertools.repeat(max_idxy),itertools.repeat(ix),idxy,itertools.repeat(grid),itertools.repeat(large_layerpc)))
 
@@ -177,16 +170,16 @@ def slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, poolin
                     grid[1][rviy][ix] = np.min(large_layerpc[2])
                 else:
                     grid[1][rviy][ix] = np.max(large_layerpc[2][location])
-        '''
+        
 
         np.save('images/picture_%06d_%03d.npy'%(imagenum,ilayer),grid)
     xmin = xmin - np.min(pc[0]); xmax = xmax - np.min(pc[0]); ymin = ymin - np.min(pc[1]); ymax = ymax - np.min(pc[1]);
     xmin = np.floor(xmin*100); xmax = np.floor(xmax*100); ymin = np.floor(ymin*100); ymax = np.floor(ymax*100); #zmin = np.floor(zmin*100); zmax = np.floor(zmax*100);
-    ymin = max(idxy) - ymin; ymax = max(idxy) - ymax
+    tmp_ymax = max(idxy) - ymin; ymin = max(idxy) - ymax; ymax = tmp_ymax
     # plot 2d to show box and data
-    #plot_2d_pc_bbox(grid, xmin, xmax, ymin, ymax)
+    #plot_2d_pc_bbox(grid, xmin, ymin, xmax, ymax)
     
-    return grid, ymin, ymax, xmin, xmax
+    return grid, xmin, ymin, xmax, ymax
 
 
 data = h5py.File('/media/closerbibi/internal3/3D/understanding/rankpooling/rgbd_data/nyu_v2_labeled/nyu_depth_v2_labeled.mat')
@@ -196,7 +189,9 @@ K = np.array([[5.7616540758591043e+02,0,3.2442516903961865e+02],[0,5.73756197820
 
 count=1;
 
-for imagenum in xrange(data['depths'].shape[0]):#size(depths,3):
+for imagenum in xrange(data['depths'].shape[0]+1):#size(depths,3):
+    if np.where(np.array([88, 179, 390, 650])==imagenum)[0].size != 0:
+        continue
     print 'now at image: %d' % (imagenum)
     start_time = time.time()
     # bed=157, chair=5, table=19, sofa=83, toilet=124
@@ -214,9 +209,16 @@ for imagenum in xrange(data['depths'].shape[0]):#size(depths,3):
     #pc = pc[[1,0,2],:]
     normals = sio.loadmat('./normalAndpc/normalAndpc%06d.mat'%(imagenum))['normals']
     pooling = 0
-    #slicedto2D
-    
-    grid, ymin, ymax, xmin, xmax = slicedto2D(pc, normals, imagenum, xmin, xmax, ymin, ymax, zmin, zmax, pooling);
+
+    if np.where(clss=='chair')[0].size == 0:
+        continue
+    # filter for chair
+    cha_fil = np.where(clss=='chair')
+    xmin = xmin[cha_fil]; ymin = ymin[cha_fil]; zmin = zmin[cha_fil]
+    xmax = xmax[cha_fil]; ymax = ymax[cha_fil]; zmax = zmax[cha_fil]
+    clss = clss[cha_fil]
+    #slicedto2D    
+    grid, xmin, ymin, xmax, ymax = slicedto2D(pc, normals, imagenum, xmin, ymin, xmax, ymax, zmin, zmax, pooling);
     for k in xrange(len(clss)):
         fid = open('./label_box_chair/picture_%07d.txt'%(imagenum),'w')
         if str(clss[k][0]) == 'chair':
